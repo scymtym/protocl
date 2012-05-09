@@ -17,7 +17,7 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program. If not, see <http://www.gnu.org/licenses>.
 
-(cl:in-package :protobuf.parser)
+(cl:in-package :protocl.parser)
 
 ;;; TODO(jmoringe, 2012-04-16): duplicated in src/types.lisp
 
@@ -66,7 +66,7 @@ parsing results are being constructed. Used to detect option name
 clashes.")
 
 (defvar *fields* nil
-  "Bound to a list of lists of field information entries of the form 
+  "Bound to a list of lists of field information entries of the form
 
   (NUMBER . NAME)
 

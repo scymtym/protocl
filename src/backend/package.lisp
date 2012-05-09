@@ -17,12 +17,12 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program. If not, see <http://www.gnu.org/licenses>.
 
-(cl:defpackage :protobuf.backend
+(cl:defpackage :protocl.backend
   (:use
    :cl
    :alexandria
 
-   :protobuf)
+   :protocl)
 
   ;; Emission protocol
   (:export
@@ -30,4 +30,4 @@
 
   (:documentation
    "This package contains the code generation machinery of the
-protobuf system."))
+protocl system."))

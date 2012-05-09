@@ -17,7 +17,7 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program. If not, see <http://www.gnu.org/licenses>.
 
-(cl:in-package :protobuf.coding)
+(cl:in-package :protocl.coding)
 
 (eval-when (:compile-toplevel :load-toplevel)
   (defvar *default-optimization-settings* '((speed 0) (debug 3) (safety 3) (compilation-speed 0))

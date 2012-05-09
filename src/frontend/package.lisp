@@ -17,13 +17,13 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program. If not, see <http://www.gnu.org/licenses>.
 
-(cl:defpackage :protobuf.frontend
+(cl:defpackage :protocl.frontend
   (:use
    :cl
    :alexandria
    :let-plus
 
-   :protobuf.parser)
+   :protocl.parser)
 
   ;; Conditions
   (:export
@@ -47,4 +47,4 @@
   (:documentation
    "This package contains the functions for producing abstract
 representations form textual protocol buffer descriptions (the
-frontend of the protobuf system)."))
+frontend of the protocl system)."))

@@ -17,10 +17,8 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program. If not, see <http://www.gnu.org/licenses>.
 
-(cl:in-package :protobuf.backend)
+(cl:in-package :protocl.backend)
 
 (defgeneric emit (node target)
   (:documentation
    "TODO(jmoringe): document"))
-
-

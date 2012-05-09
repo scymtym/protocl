@@ -1,4 +1,4 @@
-;;; package.lisp --- Package definition for the protobuf system.
+;;; package.lisp --- Package definition for the protocl system.
 ;;
 ;; Copyright (C) 2012 Jan Moringen
 ;;
@@ -17,11 +17,10 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program. If not, see <http://www.gnu.org/licenses>.
 
-(cl:defpackage :protobuf
+(cl:defpackage :protocl
   (:use
    :cl
-   :alexandria
-   :nibbles)
+   :alexandria)
 
   ;; Wire types
   (:export
@@ -43,4 +42,4 @@
    :+primitive-proto-types+)
 
   (:documentation
-   "Main package for the protobuf system."))
+   "Main package for the protocl system."))

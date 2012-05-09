@@ -1,4 +1,4 @@
-;;; protobuf.asd --- Google protocol buffer compiler.
+;;; protocl.asd --- Google protocol buffer compiler.
 ;;
 ;; Copyright (C) 2012 Jan Moringen
 ;;
@@ -17,7 +17,7 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program. If not, see <http://www.gnu.org/licenses>.
 
-(cl:defpackage :protobuf-system
+(cl:defpackage :protocl-system
   (:use
    :cl
    :asdf)
@@ -26,7 +26,7 @@
    :version/list
    :version/string))
 
-(cl:in-package :protobuf-system)
+(cl:in-package :protocl-system)
 
 
 ;;; Version stuff
@@ -53,7 +53,7 @@
 ;;; System definitions
 ;;
 
-(defsystem :protobuf-parser
+(defsystem :protocl-parser
   :author      "Jan Moringen <jmoringe@techfak.uni-bielefeld.de>"
   :maintainer  "Jan Moringen <jmoringe@techfak.uni-bielefeld.de>"
   :version     #.(version/string)
@@ -61,6 +61,7 @@
   :description "Parser infrastructure for textual protocol buffer format."
   :depends-on  (:alexandria
 		:let-plus
+
 		:esrap)
   :components  ((:module     "parser"
 		 :pathname   "src/parser"
@@ -71,7 +72,7 @@
 			      (:file       "parser")
 			      (:file       "mixins")))))
 
-(defsystem :protobuf
+(defsystem :protocl
   :author      "Jan Moringen <jmoringe@techfak.uni-bielefeld.de>"
   :maintainer  "Jan Moringen <jmoringe@techfak.uni-bielefeld.de>"
   :version     #.(version/string)
@@ -80,7 +81,9 @@
   :depends-on  (:alexandria
 		:let-plus
 
-		:protobuf-parser)
+		:nibbles
+
+		:protocl-parser)
   :components  ((:module     "src"
 		 :serial     t
 		 :components ((:file       "package")

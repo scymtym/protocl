@@ -1,4 +1,4 @@
-;;; types.lisp --- Types used in the protobuf system.
+;;; types.lisp --- Types used in the protocl system.
 ;;
 ;; Copyright (C) 2012 Jan Moringen
 ;;
@@ -17,7 +17,7 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program. If not, see <http://www.gnu.org/licenses>.
 
-(cl:in-package :protobuf)
+(cl:in-package :protocl)
 
 
 ;;; Wire-types

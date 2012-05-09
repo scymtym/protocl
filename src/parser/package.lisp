@@ -17,7 +17,7 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program. If not, see <http://www.gnu.org/licenses>.
 
-(cl:defpackage :protobuf.parser
+(cl:defpackage :protocl.parser
   (:use
    :cl
    :alexandria)
@@ -33,11 +33,11 @@
    :proto-parse-error-column
    :proto-parse-error-offset
    :proto-parse-error-causing-condition)
-  
+
   ;; Variables
   (:export
    :*path*)
-  
+
   ;; Builder protocol
   (:export
    :make-comment
@@ -49,14 +49,14 @@
 
    :make-enum-value
    :make-enum
-   
+
    :make-field
    :make-message
 
    :make-package1
-   
+
    :make-file
-   
+
    :add-child)
 
   ;; Comment attaching protocol

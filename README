@@ -1,0 +1,33 @@
+#+TITLE:  protocl README
+#+AUTHOR: Jan Moringen
+#+EMAIL:  jmoringe@techfak.uni-bielefeld.de
+
+* TODO Introduction
+  =protocl= is a pure Common Lisp implementation of a Protocol Buffer
+  compiler. In particular, it does not depend on Google's protocol
+  buffer compiler, =protoc=, or other external tools [fn:graphviz:
+  GraphViz can be used for visualization.].
+#+ATTR_LaTeX: width=\linewidth
+#+begin_ditaa overview.png -r -s 5
+:
+:  Frontend ----> Model -------> Backend
+:
+: +--------------+--------------+--------------+
+: | S-Expr       |              | Code         |
+: +--------------+              +--------------+
+: | Binary       | Intermediate | Textual      |
+: | Descriptors  | Representat. | Descriptors  |
+: +--------------+              +--------------+
+: | Textual      |              | Visualization|
+: | Descriptors  |              |              |
+: +--------------+--------------+--------------+
+:
+#+end_ditaa
+* TODO Tutorial
+* TODO Reference
+
+* settings							   :noexport:
+
+# Local Variables:
+# mode: org
+# End:

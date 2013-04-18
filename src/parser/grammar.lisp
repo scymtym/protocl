@@ -140,6 +140,55 @@ rule. Defaults to `esrap:defrule'.
 	   (and ,name (? whitespace))
 	 (:function first)))))
 
+(defmacro defrule/locations (symbol expression &body options)
+  "Like `esrap:defrule' but add code which captures the source
+location and transfers it to conditions signaled from the rule."
+  (labels
+      ((ensure-bounds-args (option &optional transform)
+	 (let+ (((keyword args &body body) option)
+		((&values body declarations) (parse-body body))
+		((&optional &bounds-supplied? (start-var (gensym)) (end-var (gensym)))
+		 (if-let ((position (position 'esrap:&bounds args)))
+		   (cons t (subseq args (1+ position)))
+		   (list nil))))
+	   (values
+	    `(,keyword (,@args ,@(unless &bounds-supplied?
+                                   `(esrap:&bounds ,start-var ,end-var)))
+		       ,@declarations
+		       ,@(if transform
+                             (funcall transform body start-var end-var)
+                             body))
+	    start-var end-var)))
+       (replace-builder-functions (body start-var end-var)
+	 `((flet ,(mapcar
+		   (lambda (name)
+		     `(,name (&rest args)
+		        (apply #',name (append
+					args
+					(list :bounds (cons ,start-var ,end-var))))))
+		   '(make-comment make-syntax make-import make-option
+		     make-enum-value make-enum make-field make-message
+		     make-package1 make-file))
+	     ,@body)))
+       (process-around (option)
+	 (ensure-bounds-args option #'replace-builder-functions))
+       (process-lambda (option)
+	 (ensure-bounds-args option #'replace-builder-functions))
+       (process-options (options)
+	 (mapcar (lambda (option)
+		   (case (first option)
+		     (:around
+		      (process-around option))
+		     ((:lambda :destructure)
+		      (process-lambda option))
+		     (t
+		      option)))
+		 (adjoin `(:around () (esrap:call-transform)) options
+			 :key  #'first
+			 :test #'eq))))
+    `(defrule ,symbol ,expression
+       ,@(process-options options))))
+
 
 ;;; Single-character and whitespace rules
 ;;
@@ -168,7 +217,7 @@ rule. Defaults to `esrap:defrule'.
     (* (not #\Newline))
   (:text t))
 
-(defrule comment/rest-of-line
+(defrule/locations comment/rest-of-line
     (and (and #\/ #\/) same-line (? #\Newline))
   (:destructure (begin content end)
     (declare (ignore begin end))
@@ -178,7 +227,7 @@ rule. Defaults to `esrap:defrule'.
     (* (or (not #\*) (and #\* (! #\/))))
   (:text t))
 
-(defrule comment/delimited
+(defrule/locations comment/delimited
     (and (and #\/ #\*) comment-content/delimited (and #\* #\/))
   (:destructure (open content close)
     (declare (ignore open close))
@@ -210,7 +259,8 @@ rule. Defaults to `esrap:defrule'.
   (:destructure (first rest)
     (cons first (mapcar #'second rest))))
 
-(defrule/ws identifier/checked
+(defrule/ws (identifier/checked
+	     :definer defrule/locations)
     identifier
   (:lambda (name)
     (check-name name 1)))
@@ -244,20 +294,20 @@ rule. Defaults to `esrap:defrule'.
 ;;; Option-stuff rules
 ;;
 
-(defrule syntax
+(defrule/locations syntax
     (and (and "syntax" (? whitespace))
 	 =/ws #\" (* (alphanumericp character)) #\")
   (:destructure (keyword equals open value close)
     (declare (ignore keyword equals open close))
     (make-syntax *builder* (esrap:text value))))
 
-(defrule import
+(defrule/locations import
     (and (and "import" whitespace) string semicolon)
   (:destructure (keyword value semicolon)
     (declare (ignore keyword semicolon))
     (make-import *builder* value)))
 
-(defrule option-body
+(defrule/locations option-body
     (and identifier/?ws =/ws (or string number identifier))
   (:destructure (name equals value)
     (declare (ignore equals))
@@ -283,7 +333,7 @@ rule. Defaults to `esrap:defrule'.
     (declare (ignore open close))
     (cons first (mapcar #'second rest))))
 
-(defrule field
+(defrule/locations field
     (and label/ws type1/ws identifier/?ws =/ws number/?ws (? field-options) semicolon)
   (:destructure (label type name equals number options semicolon)
     (declare (ignore equals semicolon))
@@ -300,7 +350,7 @@ rule. Defaults to `esrap:defrule'.
 	(or message enum field option)
 	whitespace semicolon))
 
-(defrule message
+(defrule/locations message
     (and (and "message" whitespace) identifier/checked/?ws
 	 {/ws (* message-element) }/ws)
   (:destructure (keyword name open content close)
@@ -320,7 +370,7 @@ rule. Defaults to `esrap:defrule'.
 ;;; Enum
 ;;
 
-(defrule enum-value
+(defrule/locations enum-value
     (and identifier/?ws =/ws number/?ws semicolon)
   (:destructure (name equals value semicolon)
     (declare (ignore equals semicolon))
@@ -335,7 +385,7 @@ rule. Defaults to `esrap:defrule'.
 	enum-value
 	whitespace semicolon))
 
-(defrule enum
+(defrule/locations enum
     (and (and "enum" whitespace) identifier/checked/?ws
 	 {/ws (* enum-element) }/ws)
   (:destructure (keyword name open content close)
@@ -354,7 +404,7 @@ rule. Defaults to `esrap:defrule'.
 ;;; Package
 ;;
 
-(defrule package
+(defrule/locations package
     (and (and "package" whitespace) dotted-identifier semicolon)
   (:destructure (keyword name semicolon)
     (declare (ignore keyword semicolon))
@@ -372,7 +422,7 @@ rule. Defaults to `esrap:defrule'.
     (setf *package1* (add-child *builder* *package1* element))
     nil))
 
-(defrule proto
+(defrule/locations proto
     (* (or comment/rest-of-line comment/delimited
 	   package
 	   packaged-element

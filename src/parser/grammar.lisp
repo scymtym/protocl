@@ -209,6 +209,10 @@ location and transfers it to conditions signaled from the rule."
     (+ (or #\Tab #\Space #\Newline))
   (:constant nil))
 
+(defrule semicolon
+    #\;
+  (:constant nil))
+
 
 ;;; Comment-related rules
 ;;
@@ -264,10 +268,6 @@ location and transfers it to conditions signaled from the rule."
     identifier
   (:lambda (name)
     (check-name name 1)))
-
-(defrule semicolon
-    #\;
-  (:constant nil))
 
 
 ;;; Types
@@ -426,7 +426,7 @@ location and transfers it to conditions signaled from the rule."
     (* (or comment/rest-of-line comment/delimited
 	   package
 	   packaged-element
-	   whitespace #\;))
+	   whitespace semicolon))
   ;; Root production; parses top-level comments, package directives
   ;; and top-level definitions. Package directives change the value of
   ;; `*package1*' and affect subsequent top-level definitions.

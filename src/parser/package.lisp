@@ -1,6 +1,6 @@
 ;;; package.lisp --- Package definition for the parser module.
 ;;
-;; Copyright (C) 2012 Jan Moringen
+;; Copyright (C) 2012, 2013 Jan Moringen
 ;;
 ;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 ;;
@@ -20,7 +20,8 @@
 (cl:defpackage :protocl.parser
   (:use
    :cl
-   :alexandria)
+   :alexandria
+   :let-plus)
 
   (:import-from :esrap
    :defrule

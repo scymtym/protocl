@@ -1,6 +1,6 @@
 ;;; grammar.lisp --- Protocol buffer descriptor grammar.
 ;;
-;; Copyright (C) 2012 Jan Moringen
+;; Copyright (C) 2012, 2013 Jan Moringen
 ;;
 ;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 ;;
@@ -104,17 +104,35 @@ conflicting field declarations.")
   (when-let ((entry (find name *fields* :test #'string= :key #'cdr)))
     (error "~@<Duplicate field name ~S.~@:>"
 	   name))
+
   (push (cons number name) *fields*))
 
-(defmacro defrule/ws (name expression &body options)
-  "Like `esrap:defule' but define an additional rule named NAME/WS
-which requires EXPRESSION to be followed by whitespace."
-  (let ((name/ws  (format-symbol *package* "~A/WS" name))
-	(name/?ws (format-symbol *package* "~A/?WS" name)))
+(defmacro defrule/ws (name-and-options
+		      expression &body options)
+  "Like `esrap:defule' but define additional rules named NAME/WS and
+NAME/?WS which respectively require/ allow EXPRESSION to be followed
+by whitespace.
+
+NAME-AND-OPTIONS can either just be a rule name or list of the form
+
+  (NAME &key WS? ?WS? DEFINER)
+
+where WS? and ?WS? control which of the NAME/WS and NAME/?WS rules
+should be generated. Default is generating both.
+
+DEFINER is the name of the macro used to define \"main\"
+rule. Defaults to `esrap:defrule'.
+"
+  (let+ (((name
+	   &key
+	   (definer         'defrule))
+	  (ensure-list name-and-options))
+	 (name/ws  (format-symbol *package* "~A/WS" name))
+	 (name/?ws (format-symbol *package* "~A/?WS" name)))
     `(progn
-       (defrule ,name
-	   ,expression
-	 ,@options)
+       (,definer ,name
+		 ,expression
+		 ,@options)
        (defrule ,name/ws
 	   (and ,name whitespace)
 	 (:function first))
@@ -125,16 +143,6 @@ which requires EXPRESSION to be followed by whitespace."
 
 ;;; Single-character and whitespace rules
 ;;
-
-(macrolet
-    ((define-not (character)
-       (let ((name (format-symbol *package* "NOT-~@:(~A~)"
-				  (substitute #\- #\_ (char-name character)))))
-	 `(defun ,name (character)
-	    (not (char= character ,character))))))
-  (define-not #\Newline)
-  (define-not #\*)
-  (define-not #\"))
 
 (macrolet ((define-ws (character)
 	     (let ((name (format-symbol *package* "~C/WS" character)))
@@ -157,7 +165,7 @@ which requires EXPRESSION to be followed by whitespace."
 ;;
 
 (defrule same-line
-    (* (not-newline character))
+    (* (not #\Newline))
   (:text t))
 
 (defrule comment/rest-of-line
@@ -167,8 +175,7 @@ which requires EXPRESSION to be followed by whitespace."
     (make-comment *builder* content)))
 
 (defrule comment-content/delimited
-    (* (or (and #\* (! #\/))
-	   (not-asterisk character)))
+    (* (or (not #\*) (and #\* (! #\/))))
   (:text t))
 
 (defrule comment/delimited
@@ -187,10 +194,7 @@ which requires EXPRESSION to be followed by whitespace."
     (parse-integer (esrap:text digits))))
 
 (defrule/ws string
-    (and #\"
-	 (* (or (and #\\ #\")
-		(not-quotation-mark character)))
-	 #\")
+    (and #\" (* (or (and #\\ #\") (not #\"))) #\")
   (:destructure (open characters close)
     (declare (ignore open close))
     (esrap:text (substitute #\" '("\\" "\"") characters
@@ -210,6 +214,10 @@ which requires EXPRESSION to be followed by whitespace."
     identifier
   (:lambda (name)
     (check-name name 1)))
+
+(defrule semicolon
+    #\;
+  (:constant nil))
 
 
 ;;; Types
@@ -244,7 +252,7 @@ which requires EXPRESSION to be followed by whitespace."
     (make-syntax *builder* (esrap:text value))))
 
 (defrule import
-    (and (and "import" whitespace) string #\;)
+    (and (and "import" whitespace) string semicolon)
   (:destructure (keyword value semicolon)
     (declare (ignore keyword semicolon))
     (make-import *builder* value)))
@@ -276,7 +284,7 @@ which requires EXPRESSION to be followed by whitespace."
     (cons first (mapcar #'second rest))))
 
 (defrule field
-    (and label/ws type1/ws identifier/?ws =/ws number/?ws (? field-options) #\;)
+    (and label/ws type1/ws identifier/?ws =/ws number/?ws (? field-options) semicolon)
   (:destructure (label type name equals number options semicolon)
     (declare (ignore equals semicolon))
     (check-field number name)
@@ -290,7 +298,7 @@ which requires EXPRESSION to be followed by whitespace."
 (defrule message-element
     (or comment/rest-of-line comment/delimited
 	(or message enum field option)
-	whitespace #\;))
+	whitespace semicolon))
 
 (defrule message
     (and (and "message" whitespace) identifier/checked/?ws
@@ -313,7 +321,7 @@ which requires EXPRESSION to be followed by whitespace."
 ;;
 
 (defrule enum-value
-    (and identifier/?ws =/ws number/?ws #\;)
+    (and identifier/?ws =/ws number/?ws semicolon)
   (:destructure (name equals value semicolon)
     (declare (ignore equals semicolon))
     (check-name name)
@@ -325,7 +333,7 @@ which requires EXPRESSION to be followed by whitespace."
 (defrule enum-element
     (or comment/rest-of-line comment/delimited
 	enum-value
-	whitespace #\;))
+	whitespace semicolon))
 
 (defrule enum
     (and (and "enum" whitespace) identifier/checked/?ws
@@ -347,7 +355,7 @@ which requires EXPRESSION to be followed by whitespace."
 ;;
 
 (defrule package
-    (and (and "package" whitespace) dotted-identifier #\;)
+    (and (and "package" whitespace) dotted-identifier semicolon)
   (:destructure (keyword name semicolon)
     (declare (ignore keyword semicolon))
     (let ((qname (cons :absolute name)))

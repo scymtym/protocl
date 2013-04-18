@@ -1,6 +1,6 @@
 ;;; protocl.asd --- Google protocol buffer compiler.
 ;;
-;; Copyright (C) 2012 Jan Moringen
+;; Copyright (C) 2012, 2013 Jan Moringen
 ;;
 ;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 ;;
@@ -62,7 +62,7 @@
   :depends-on  (:alexandria
 		:let-plus
 
-		:esrap)
+		(:version :esrap "0.9"))
   :components  ((:module     "parser"
 		 :pathname   "src/parser"
 		 :serial     t

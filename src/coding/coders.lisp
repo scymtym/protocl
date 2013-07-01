@@ -1,6 +1,6 @@
-;;; coders.lisp ---
+;;; coders.lisp --- De/encoding functions for primitive types.
 ;;
-;; Copyright (C) 2012 Jan Moringen
+;; Copyright (C) 2012, 2013 Jan Moringen
 ;;
 ;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 ;;
@@ -136,25 +136,24 @@
   (max 1 (ceiling (integer-length value) 7))
   :encode
   (loop
-     for v      = value then (ash v -7)
-     for v-next = (ash v -7)
-     for j from 0 below most-positive-fixnum
-     for i      = (+ start j)
-     until (or (and (zerop v) (> j 0)))
-     do (progn
-          (setf (aref buffer i)
-                (logior (ldb (byte 7 0) v)
-                        (if (zerop v-next) 0 (ash 1 7)))))
-     finally (return (- i start)))
+    for v      = value then (ash v -7)
+    for v-next = (ash v -7)
+    for j from 0 below most-positive-fixnum
+    for i      = (+ start j)
+    until (and (zerop v) (plusp j))
+    do (setf (aref buffer i)
+	     (logior (ldb (byte 7 0) v)
+		     (if (zerop v-next) 0 (ash 1 7))))
+    finally (return (- i start)))
   :decode
   (loop
-     for offset from start  ; position in buffer
-     for k      from 0 by 7 ; position in integer
-     for octet  =    (aref buffer offset)
-     for piece  =    (ldb (byte 7 0) octet)
-     for accum  =    piece then (dpb piece (byte 7 k) accum)
-     when (not (logbitp 7 octet))
-     return (values accum (1+ (- offset start)))))
+    for offset from start  ; position in buffer
+    for k      from 0 by 7 ; position in integer
+    for octet  =    (aref buffer offset)
+    for piece  =    (ldb (byte 7 0) octet)
+    for accum  =    piece then (dpb piece (byte 7 k) accum)
+    when (not (logbitp 7 octet))
+    return (values accum (1+ (- offset start)))))
 
 (declaim (ftype (function (integer) integer) zigzag unzigzag)
 	 (inline zigzag unzigzag))
@@ -245,7 +244,7 @@
   :decode
   (let+ (((&values number-and-wire-type length)
 	  (%decode-uvarint buffer start))
-	 (number    (ash number-and-wire-type  -3))
+	 (number    (ash number-and-wire-type -3))
 	 (wire-type (ldb (byte 3 0) number-and-wire-type)))
     (unless (typep wire-type 'wire-type/code)
       (error 'invalid-wire-type

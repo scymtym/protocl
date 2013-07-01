@@ -115,7 +115,7 @@
   (values (case (aref buffer start)
             (0 nil)
             (1 t)
-            (t (error "Invalid boolean value")))
+            (t (error "~@<Invalid Boolean value~@:>")))
           1))
 
 (define-coder (uvarint (unsigned-byte 64))

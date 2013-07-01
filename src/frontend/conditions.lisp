@@ -32,9 +32,10 @@ resolve the import."))
   (:report
    (lambda (condition stream)
      (format stream "~@<The resource designated by the import ~S could ~
-not be resolved. ~:[No locations have been tried. Check ~S or the ~
-installed dependency handler~;~:*These locations have been tried: ~
-~{~S~^, ~}~].~@:>"
+                     not be resolved. ~:[No locations have been ~
+                     tried. Check ~S or the installed dependency ~
+                     handler~;~:*These locations have been tried: ~
+                     ~{~S~^, ~}~].~@:>"
              (import-error-import    condition)
              (import-error-locations condition)
              '*import-search-path*)))
@@ -58,7 +59,7 @@ statement cannot be found or loaded."))
   (:report
    (lambda (condition stream)
      (format stream "~@<Ambiguous import ~S. Candidates are ~{~S~^, ~
-~}.~@:>"
+                     ~}.~@:>"
              (import-error-import     condition)
              (import-error-candidates condition))))
   (:documentation

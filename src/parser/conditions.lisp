@@ -31,7 +31,7 @@ error."))
   (:report
    (lambda (condition stream)
      (format stream "~@<Parse error at line ~D, column ~D (offset ~D): ~
-~A.~@:>"
+                     ~A.~@:>"
              (proto-parse-error-line              condition)
              (proto-parse-error-column            condition)
              (proto-parse-error-offset            condition)

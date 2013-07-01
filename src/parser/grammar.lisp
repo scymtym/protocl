@@ -88,11 +88,13 @@ conflicting field declarations.")
   ;; Check name and number.
   (check-name name)
   (unless (typep number 'field-number)
-    (error "~@<Number ~A of field ~S is not a positive integer in the range [~D, ~D].~@:>"
+    (error "~@<Number ~A of field ~S is not a positive integer in the ~
+            range [~D, ~D].~@:>"
            number name 0 +most-positive-field-number+))
 
   (when-let ((entry (find number *fields* :test #'= :key #'car)))
-    (error "~@<Duplicate field number ~D for field ~S; previously used for field ~S.~@:>"
+    (error "~@<Duplicate field number ~D for field ~S; previously used ~
+            for field ~S.~@:>"
            number name (cdr entry)))
   (when-let ((entry (find name *fields* :test #'string= :key #'cdr)))
     (error "~@<Duplicate field name ~S.~@:>"
@@ -361,7 +363,8 @@ location and transfers it to conditions signaled from the rule."
     (declare (ignore equals semicolon))
     (check-name name)
     (unless (typep value 'enum-value)
-      (error "~@<Enum value ~D (named ~S) is not an integer in the range [~D, ~D].~@:>"
+      (error "~@<Enum value ~D (named ~S) is not an integer in the ~
+              range [~D, ~D].~@:>"
              value name
              +most-negative-enum-value+ +most-positive-enum-value+))
     (make-enum-value *builder* name value))

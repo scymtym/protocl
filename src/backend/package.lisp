@@ -4,16 +4,16 @@
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
-(cl:defpackage :protocl.backend
+(cl:defpackage #:protocl.backend
   (:use
-   :cl
-   :alexandria
+   #:cl
+   #:alexandria
 
-   :protocl)
+   #:protocl)
 
   ;; Emission protocol
   (:export
-   :emit)
+   #:emit)
 
   (:documentation
    "This package contains the code generation machinery of the

@@ -4,29 +4,29 @@
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
-(cl:defpackage :protocl
+(cl:defpackage #:protocl
   (:use
-   :cl
-   :alexandria)
+   #:cl
+   #:alexandria)
 
   ;; Wire types
   (:export
-   :field-number
+   #:field-number
 
-   :wire-type/code
-   :wire-type/name
+   #:wire-type/code
+   #:wire-type/name
 
-   :wire-type-code->name
-   :wire-type-name->code)
+   #:wire-type-code->name
+   #:wire-type-name->code)
 
   ;; Start codes
   (:export
-   :start-code/code/cons
-   :start-code/name/cons
-   :start-code/number)
+   #:start-code/code/cons
+   #:start-code/name/cons
+   #:start-code/number)
 
   (:export
-   :+primitive-proto-types+)
+   #:+primitive-proto-types+)
 
   (:documentation
    "Main package for the protocl system."))

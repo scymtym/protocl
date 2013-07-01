@@ -4,32 +4,32 @@
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
-(cl:defpackage :protocl.frontend
+(cl:defpackage #:protocl.frontend
   (:use
-   :cl
-   :alexandria
-   :let-plus
+   #:cl
+   #:alexandria
+   #:let-plus
 
-   :protocl.parser)
+   #:protocl.parser)
 
   ;; Conditions
   (:export
-   :import-error
-   :import-error-import
+   #:import-error
+   #:import-error-import
 
-   :cannot-resolve-import
-   :import-error-locations
+   #:cannot-resolve-import
+   #:import-error-locations
 
-   :ambiguous-import
-   :import-error-candidates)
+   #:ambiguous-import
+   #:import-error-candidates)
 
   ;; Variables
   (:export
-   :*import-search-path*)
+   #:*import-search-path*)
 
   ;;
   (:export
-   :load/text)
+   #:load/text)
 
   (:documentation
    "This package contains the functions for producing abstract

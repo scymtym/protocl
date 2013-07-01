@@ -4,7 +4,7 @@
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
-(cl:in-package :protocl.backend)
+(cl:in-package #:protocl.backend)
 
 (defgeneric emit (node target)
   (:documentation

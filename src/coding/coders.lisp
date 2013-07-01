@@ -4,7 +4,7 @@
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
-(cl:in-package :protocl.coding)
+(cl:in-package #:protocl.coding)
 
 (eval-when (:compile-toplevel :load-toplevel)
   (defvar *default-optimization-settings* '((speed 0) (debug 3) (safety 3) (compilation-speed 0))

@@ -4,31 +4,31 @@
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
-(cl:defpackage :protocl.model
+(cl:defpackage #:protocl.model
   (:use
-   :cl
-   :alexandria
+   #:cl
+   #:alexandria
 
-   :protocl)
+   #:protocl)
 
   ;; named protocol
   (:export
-   :name)
+   #:name)
 
   ;; composite protocol
   (:export
-   :children)
+   #:children)
 
   ;; field
   (:export
-   :field
-   :number
-   :type)
+   #:field
+   #:number
+   #:type)
 
   ;; classes
   (:export
-   :package1
-   :message)
+   #:package1
+   #:message)
 
   (:documentation
    "This package contains classes and functions that act as abstract

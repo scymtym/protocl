@@ -4,7 +4,7 @@
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
-(cl:in-package :protocl.parser)
+(cl:in-package #:protocl.parser)
 
 (defmethod parse ((source string) (builder t))
   (let ((*builder* builder))

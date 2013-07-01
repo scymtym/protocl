@@ -337,9 +337,8 @@ location and transfers it to conditions signaled from the rule."
       (esrap:call-transform))))
 
 (defrule message-element
-    (or comment
-        (or message enum field option)
-        whitespace semicolon))
+    (or (or message enum field option)
+        comment whitespace semicolon))
 
 (defrule/locations message
     (and (and "message" whitespace) identifier/checked/?ws

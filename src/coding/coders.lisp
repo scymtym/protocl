@@ -11,98 +11,98 @@
     "TODO(jmoringe): document"))
 
 (defmacro define-wrapper ((name type
-			   &key
-			   (optimize *default-optimization-settings*)))
+                           &key
+                           (optimize *default-optimization-settings*)))
   "TODO(jmoringe): document"
   (let+ (((&flet make-name (prefix operation)
-	    (format-symbol *package* "~@[~A~]~A~{-~A~}"
-			   prefix operation (ensure-list name))))
-	 ((%size-of-name %encode-name %decode-name)
-	  (map 'list (curry #'make-name "%") '(:size-of :encode :decode)))
-	 ((size-of-name encode-name decode-name)
-	  (map 'list (curry #'make-name nil) '(:size-of :encode :decode))))
+            (format-symbol *package* "~@[~A~]~A~{-~A~}"
+                           prefix operation (ensure-list name))))
+         ((%size-of-name %encode-name %decode-name)
+          (map 'list (curry #'make-name "%") '(:size-of :encode :decode)))
+         ((size-of-name encode-name decode-name)
+          (map 'list (curry #'make-name nil) '(:size-of :encode :decode))))
     `(progn
        (declaim (ftype (function (,type) non-negative-fixnum) ,size-of-name))
 
        (defun ,size-of-name (value)
-	 ,@(when optimize
-	     `((declare (optimize ,@optimize))))
-	 (,%size-of-name value))
+         ,@(when optimize
+             `((declare (optimize ,@optimize))))
+         (,%size-of-name value))
 
        (declaim (ftype (function (,type
-				  &optional
-				  octet-vector
-				  non-negative-fixnum)
-				 (values non-negative-fixnum octet-vector))
-		       ,encode-name))
+                                  &optional
+                                  octet-vector
+                                  non-negative-fixnum)
+                                 (values non-negative-fixnum octet-vector))
+                       ,encode-name))
 
        (defun ,encode-name (value
-			    &optional
-			    (buffer (make-octet-vector (,size-of-name value)))
-			    (start  0))
-	 ,@(when optimize
-	     `((declare (optimize ,@optimize))))
-	 (values (,%encode-name value buffer start) buffer))
+                            &optional
+                            (buffer (make-octet-vector (,size-of-name value)))
+                            (start  0))
+         ,@(when optimize
+             `((declare (optimize ,@optimize))))
+         (values (,%encode-name value buffer start) buffer))
 
        (declaim (ftype (function (octet-vector
-				  &optional
-				  non-negative-fixnum)
-				 (values ,type non-negative-fixnum))
-		       ,decode-name))
+                                  &optional
+                                  non-negative-fixnum)
+                                 (values ,type non-negative-fixnum))
+                       ,decode-name))
 
        (defun ,decode-name (buffer
-			    &optional
-			    (start 0))
-	 ,@(when optimize
-	     `((declare (optimize ,@optimize))))
-	 (,%decode-name buffer start)))))
+                            &optional
+                            (start 0))
+         ,@(when optimize
+             `((declare (optimize ,@optimize))))
+         (,%decode-name buffer start)))))
 
 (defmacro define-coder ((name type
-			 &key
-			 (optimize        *default-optimization-settings*)
-			 (define-wrapper? t))
-			&key
-			(size   (required-argument :size))
-			(encode (required-argument :encode))
-			(decode (required-argument :decode)))
+                         &key
+                         (optimize        *default-optimization-settings*)
+                         (define-wrapper? t))
+                        &key
+                        (size   (required-argument :size))
+                        (encode (required-argument :encode))
+                        (decode (required-argument :decode)))
   "TODO(jmoringe): document"
   (let+ (((&flet make-name (operation)
-	    (format-symbol *package* "%~A~{-~A~}"
-			   operation (ensure-list name))))
-	 ((size-of-name encode-name decode-name)
-	  (map 'list #'make-name '(:size-of :encode :decode))))
+            (format-symbol *package* "%~A~{-~A~}"
+                           operation (ensure-list name))))
+         ((size-of-name encode-name decode-name)
+          (map 'list #'make-name '(:size-of :encode :decode))))
     `(progn
        (declaim (ftype (function (,type) non-negative-fixnum) ,size-of-name)
-		(inline ,size-of-name))
+                (inline ,size-of-name))
 
        (defun ,size-of-name (value)
-	 (declare (ignorable value))
-	 ,@(when optimize
-	   `((declare (optimize ,@optimize))))
-	 ,size)
+         (declare (ignorable value))
+         ,@(when optimize
+           `((declare (optimize ,@optimize))))
+         ,size)
 
        (declaim (ftype (function (,type octet-vector non-negative-fixnum)
-				 non-negative-fixnum)
-		       ,encode-name)
-		(inline ,encode-name))
+                                 non-negative-fixnum)
+                       ,encode-name)
+                (inline ,encode-name))
 
        (defun ,encode-name (value buffer start)
-	 ,@(when optimize
-	   `((declare (optimize ,@optimize))))
-	 ,encode)
+         ,@(when optimize
+           `((declare (optimize ,@optimize))))
+         ,encode)
 
        (declaim (ftype (function (octet-vector non-negative-fixnum)
-				 (values ,type non-negative-fixnum))
-		       ,decode-name)
-		(inline ,decode-name))
+                                 (values ,type non-negative-fixnum))
+                       ,decode-name)
+                (inline ,decode-name))
 
        (defun ,decode-name (buffer start)
-	 ,@(when optimize
-	   `((declare (optimize ,@optimize))))
-	 ,decode)
+         ,@(when optimize
+           `((declare (optimize ,@optimize))))
+         ,decode)
 
        ,@(when define-wrapper?
-	   `((define-wrapper (,name ,type)))))))
+           `((define-wrapper (,name ,type)))))))
 
 (define-coder (bool t)
   :size
@@ -129,8 +129,8 @@
     for i      = (+ start j)
     until (and (zerop v) (plusp j))
     do (setf (aref buffer i)
-	     (logior (ldb (byte 7 0) v)
-		     (if (zerop v-next) 0 (ash 1 7))))
+             (logior (ldb (byte 7 0) v)
+                     (if (zerop v-next) 0 (ash 1 7))))
     finally (return (- i start)))
   :decode
   (loop
@@ -143,7 +143,7 @@
     return (values accum (1+ (- offset start)))))
 
 (declaim (ftype (function (integer) integer) zigzag unzigzag)
-	 (inline zigzag unzigzag))
+         (inline zigzag unzigzag))
 
 (defun zigzag (value)
   (let ((signum (signum value)))
@@ -164,42 +164,38 @@
   (multiple-value-bind (raw length) (%decode-uvarint buffer start)
     (values (unzigzag raw) length)))
 
-
 ;;; Width- and sign-specified types
-;;
 
 (macrolet
     ((define-varint-coder (size signed?)
        (let ((name      (format nil "VAR~:[U~;~]INT~D" signed? size))
-	     (byte-type (list (if signed? 'signed-byte 'unsigned-byte) size))
-	     (mask/size (1- (ash 1 (1- size))))
-	     (mask/64   (1- (ash 1 64))))
-	 `(define-coder (,name ,byte-type)
-	    :size
-	    (let ((raw ,(if signed? `(logand value ,mask/64) 'value)))
-	      (%size-of-uvarint raw))
-	    :decode
-	    (multiple-value-bind (raw length)
-		(%decode-uvarint buffer start)
-	      (values
-	       ,(if signed?
-		    `(if (plusp (ldb (byte 1 ,(1- size)) raw))
-			 (- (- ,(1+ mask/size) (logand raw ,mask/size)))
-			 raw)
-		    'raw)
-	       length))
-	    :encode
-	    (let ((raw ,(if signed? `(logand value ,mask/64) 'value)))
-	      (%encode-uvarint raw buffer start))))))
+             (byte-type (list (if signed? 'signed-byte 'unsigned-byte) size))
+             (mask/size (1- (ash 1 (1- size))))
+             (mask/64   (1- (ash 1 64))))
+         `(define-coder (,name ,byte-type)
+            :size
+            (let ((raw ,(if signed? `(logand value ,mask/64) 'value)))
+              (%size-of-uvarint raw))
+            :decode
+            (multiple-value-bind (raw length)
+                (%decode-uvarint buffer start)
+              (values
+               ,(if signed?
+                    `(if (plusp (ldb (byte 1 ,(1- size)) raw))
+                         (- (- ,(1+ mask/size) (logand raw ,mask/size)))
+                         raw)
+                    'raw)
+               length))
+            :encode
+            (let ((raw ,(if signed? `(logand value ,mask/64) 'value)))
+              (%encode-uvarint raw buffer start))))))
 
   (define-varint-coder 32 t)
   (define-varint-coder 32 nil)
   (define-varint-coder 64 t)
   (define-varint-coder 64 nil))
 
-
 ;;; String coders
-;;
 
 (define-coder (string string)
   :size
@@ -210,15 +206,13 @@
     (length octets))
   :decode
   (values (sb-ext:octets-to-string buffer :start start)
-	  (- (length buffer) start)))
+          (- (length buffer) start)))
 
-
 ;;; start-code coder
-;;
 
 (declaim (ftype (function (start-code/code/cons) start-code/number)
-		make-start-code)
-	 (inline make-start-code))
+                make-start-code)
+         (inline make-start-code))
 
 (defun+ make-start-code ((field-number . wire-type))
   (logior (ash field-number 3) wire-type))
@@ -230,13 +224,13 @@
   (%encode-uvarint (make-start-code value) buffer start)
   :decode
   (let+ (((&values number-and-wire-type length)
-	  (%decode-uvarint buffer start))
-	 (number    (ash number-and-wire-type -3))
-	 (wire-type (ldb (byte 3 0) number-and-wire-type)))
+          (%decode-uvarint buffer start))
+         (number    (ash number-and-wire-type -3))
+         (wire-type (ldb (byte 3 0) number-and-wire-type)))
     (unless (typep wire-type 'wire-type/code)
       (error 'invalid-wire-type
-	     :offset     start
-	     :designator wire-type))
+             :offset     start
+             :designator wire-type))
     (values (cons number wire-type) length)))
 
 (define-coder (start-code/name start-code/name/cons)
@@ -246,9 +240,9 @@
   :encode
   (let+ (((field-number . name) value))
     (%encode-start-code/code (cons field-number (wire-type-name->code name))
-			     buffer start))
+                             buffer start))
   :decode
   (let+ (((&values (field-number . code) length)
-	  (%decode-start-code/code buffer start)))
+          (%decode-start-code/code buffer start)))
     (values (cons field-number (wire-type-code->name code))
-	    length)))
+            length)))

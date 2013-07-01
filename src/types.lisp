@@ -6,9 +6,7 @@
 
 (cl:in-package :protocl)
 
-
 ;;; Wire-types
-;;
 
 (defconstant +most-positive-field-number+
   #x1fffffff)
@@ -23,10 +21,10 @@
   '(member :varint :fixed64 :fixed32 :size-delimited))
 
 (declaim (ftype (function (wire-type/code) wire-type/name)
-		wire-type-code->name)
-	 (ftype (function (wire-type/name) wire-type/code)
-		wire-type-name->code)
-	 (inline wire-type-code->name wire-type-name->code))
+                wire-type-code->name)
+         (ftype (function (wire-type/name) wire-type/code)
+                wire-type-name->code)
+         (inline wire-type-code->name wire-type-name->code))
 
 (defun wire-type-code->name (code)
   (ecase code
@@ -42,9 +40,7 @@
     (:fixed32        5)
     (:size-delimited 2)))
 
-
 ;;; Start-codes
-;;
 
 (deftype start-code/code/cons ()
   '(cons field-number wire-type/code))
@@ -55,9 +51,7 @@
 (deftype start-code/number ()
   'non-negative-fixnum)
 
-
 ;;; Symbol-designated proto types
-;;
 
 (defconstant +most-negative-enum-value+ #x-80000000)
 
@@ -124,21 +118,17 @@
 ;; TODO remove
 (defun varint-enum-p (type)
   (typep type '(or varint-type enum-type)))
-;;; TODO(jmoringe): decide how enums should be represented
+;; TODO(jmoringe): decide how enums should be represented
 
 
-
 ;;; Type queries
-;;
 
 (defun fixed-size (type)
   (etypecase type
     (fixed32-type 4)
     (fixed64-type 8)))
 
-
 ;;; Type conversions
-;;
 
 (defun proto-type->wire-type (type &optional repeated? packed?)
   (check-type type proto-type "a protocol buffer type designator")
@@ -164,14 +154,14 @@
     (:float                      'cl:single-float)
     (:string                     'cl:string)
     (:bytes                      '(cl:simple-array (cl:unsigned-byte 8) *))
-    ((enum-type-p type)          type)   ;; enum
-    (t                           type))) ;; message
+    ((enum-type-p type)          type)   ; enum
+    (t                           type))) ; message
 
 (defun proto-type->lisp-type (type &optional repeated? optional?)
   (flet ((maybe-repeated (base-type)
-	   (if repeated? `(array ,base-type (*)) base-type))
-	 (maybe-optional (base-type)
-	   (if optional? `(or null ,base-type) base-type)))
+           (if repeated? `(array ,base-type (*)) base-type))
+         (maybe-optional (base-type)
+           (if optional? `(or null ,base-type) base-type)))
     (maybe-optional
      (maybe-repeated
       (scalar-proto-type->lisp-type type)))))

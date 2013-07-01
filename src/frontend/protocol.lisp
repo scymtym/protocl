@@ -7,9 +7,9 @@
 (cl:in-package :protocl.frontend)
 
 (defgeneric load/text (source
-		       &key
-		       pathname
-		       dependency-handler)
+                       &key
+                       pathname
+                       dependency-handler)
   (:documentation
    "Parse content of SOURCE as textual protocol buffer description.
 Return a `file-set-desc' instance that contains the complete
@@ -23,24 +23,22 @@ designated by the source. If this fails for some reason, the supplied
 function should signal an error of a subtype of `import-error' such as
 `cannot-resolve-import'."))
 
-
 ;;; Default implementation
-;;
 
 (defmethod load/text ((source stream)
-		      &key
-		      (pathname           "<stream>")
-		      (dependency-handler #'load-from-path))
+                      &key
+                      (pathname           "<stream>")
+                      (dependency-handler #'load-from-path))
   (let* ((file (make-file-desc pathname (parse source)))
-	 (set  (make-instance
-		'file-set-desc
-		:file (make-array 1
-				  :initial-element file
-				  :fill-pointer    1))))
+         (set  (make-instance
+                'file-set-desc
+                :file (make-array 1
+                                  :initial-element file
+                                  :fill-pointer    1))))
     ;; Load all dependencies specified via "import" statements in
     ;; SOURCE.
     (map nil (compose dependency-handler #'parse-namestring)
-	 (pb::file-desc-dependency file))
+         (pb::file-desc-dependency file))
     ;; After dependencies have been resolved, try to register names
     ;; and relations.
     (pbb:emit set :relations)
@@ -48,46 +46,44 @@ function should signal an error of a subtype of `import-error' such as
     set))
 
 (defmethod load/text ((source string)
-		      &key
-		      (pathname           "<string>")
-		      (dependency-handler #'load-from-path))
+                      &key
+                      (pathname           "<string>")
+                      (dependency-handler #'load-from-path))
   (with-input-from-string (stream source)
     (load/text stream
-	       :pathname           pathname
-	       :dependency-handler dependency-handler)))
+               :pathname           pathname
+               :dependency-handler dependency-handler)))
 
 (defmethod load/text ((source pathname)
-		      &key
-		      (pathname           (format nil "~A.~A"
-						  (pathname-name source)
-						  (pathname-type source)))
-		      (dependency-handler #'load-from-path))
+                      &key
+                      (pathname           (format nil "~A.~A"
+                                                  (pathname-name source)
+                                                  (pathname-type source)))
+                      (dependency-handler #'load-from-path))
   (with-input-from-file (stream source)
     (load/text stream
-	       :pathname           pathname
-	       :dependency-handler dependency-handler)))
+               :pathname           pathname
+               :dependency-handler dependency-handler)))
 
 (defmethod load/text ((source sequence)
-		      &rest args
-		      &key &allow-other-keys)
+                      &rest args
+                      &key &allow-other-keys)
   "This method read descriptions from all files in the list SOURCE and
 collects the resulting `file-desc' instance in one `file-set-desc'."
   (let+ (((result &rest rest)
-	  (map 'list (apply #'rcurry #'load/text args) source))
-	 ((&flet merge-one (desc)
-	    (vector-push-extend
-	     (aref (pb::file-set-desc-file desc) 0)
-	     (pb::file-set-desc-file result)))))
+          (map 'list (apply #'rcurry #'load/text args) source))
+         ((&flet merge-one (desc)
+            (vector-push-extend
+             (aref (pb::file-set-desc-file desc) 0)
+             (pb::file-set-desc-file result)))))
     (map nil #'merge-one rest)
     result))
 
-
 ;;; Default dependency resolution strategy
-;;
 
 (defun load-from-path (path
-		       &key
-		       (if-ambiguous :first))
+                       &key
+                       (if-ambiguous :first))
   "Try to load the textual protocol buffer descriptor designated by
 PATH. If PATH is an absolute pathname, it is used directly. Otherwise,
 it is merged with the elements of `*proto-load-path*' to form absolute
@@ -103,21 +99,21 @@ be selected. The value :ERROR causes an error of type
   (check-type if-ambiguous if-ambiguous-policy)
 
   (let* (;; If PATH is absolute, itself is the only
-	 ;; location. Otherwise, elements of *proto-load-path* are
-	 ;; used.
-	 (locations  (if (eq (first (pathname-directory path)) :absolute)
-			 (list path)
-			 (map 'list (curry #'merge-pathnames path)
-			      *proto-load-path*)))
-	 ;; Restrict locations to existing files and process candidate
-	 ;; set.
-	 (candidates (remove-if-not #'probe-file locations)))
+         ;; location. Otherwise, elements of *proto-load-path* are
+         ;; used.
+         (locations  (if (eq (first (pathname-directory path)) :absolute)
+                         (list path)
+                         (map 'list (curry #'merge-pathnames path)
+                              *proto-load-path*)))
+         ;; Restrict locations to existing files and process candidate
+         ;; set.
+         (candidates (remove-if-not #'probe-file locations)))
     (load/text (cond
-		 ((emptyp candidates)
-		  (cannot-resolve-import path locations))
-		 ((not (length= 1 candidates))
-		  (ecase if-ambiguous
-		    (:first (first candidates))
-		    (:error (ambiguous-import path candidates))))
-		 (t
-		  (first candidates))))))
+                 ((emptyp candidates)
+                  (cannot-resolve-import path locations))
+                 ((not (length= 1 candidates))
+                  (ecase if-ambiguous
+                    (:first (first candidates))
+                    (:error (ambiguous-import path candidates))))
+                 (t
+                  (first candidates))))))

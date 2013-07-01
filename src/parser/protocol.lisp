@@ -6,9 +6,7 @@
 
 (cl:in-package :protocl.parser)
 
-
 ;;; Parser protocol
-;;
 
 (defgeneric parse (source builder)
   (:documentation
@@ -35,9 +33,7 @@ the textual protocol buffer descriptor syntax. Major restrictions are:
   * extend keyword
   * group keyword"))
 
-
 ;;; Builder protocol
-;;
 
 (defgeneric make-comment (builder content &key bounds)
   (:documentation
@@ -131,9 +127,7 @@ input corresponding to the node being created."))
   (declare (ignore bounds))
   (values))
 
-
 ;;; Comment attaching protocol
-;;
 
 (defgeneric most-recent-comment (builder for)
   (:documentation

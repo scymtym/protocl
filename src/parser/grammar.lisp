@@ -6,7 +6,7 @@
 
 (cl:in-package :protocl.parser)
 
-;;; TODO(jmoringe, 2012-04-16): duplicated in src/types.lisp
+;; TODO(jmoringe, 2012-04-16): duplicated in src/types.lisp
 
 (defconstant +most-positive-field-number+
   #x1fffffff)
@@ -35,9 +35,7 @@
       :string  :bytes)
   :test #'equal)
 
-
 ;;; Special variables
-;;
 
 (declaim (special *builder* *package1* *path* *names* *options* *fields*))
 
@@ -70,14 +68,12 @@ clashes.")
 while parsing results are being constructed. Used to detect
 conflicting field declarations.")
 
-
 ;;; Utilities
-;;
 
 (defun check-name (name &optional (up 0))
   (when (member name (nth up *names*) :test #'string=)
     (error "~@<Duplicate name ~S.~@:>"
-	   name))
+           name))
   (push name (car (nthcdr up *names*)))
   (push name *path*)
   name)
@@ -85,7 +81,7 @@ conflicting field declarations.")
 (defun check-option (name)
   (when (member name *options* :test #'string=)
     (error "~@<Duplicate option ~S.~@:>"
-	   name))
+           name))
   (push name *options*))
 
 (defun check-field (number name)
@@ -93,19 +89,19 @@ conflicting field declarations.")
   (check-name name)
   (unless (typep number 'field-number)
     (error "~@<Number ~A of field ~S is not a positive integer in the range [~D, ~D].~@:>"
-	   number name 0 +most-positive-field-number+))
+           number name 0 +most-positive-field-number+))
 
   (when-let ((entry (find number *fields* :test #'= :key #'car)))
     (error "~@<Duplicate field number ~D for field ~S; previously used for field ~S.~@:>"
-	   number name (cdr entry)))
+           number name (cdr entry)))
   (when-let ((entry (find name *fields* :test #'string= :key #'cdr)))
     (error "~@<Duplicate field name ~S.~@:>"
-	   name))
+           name))
 
   (push (cons number name) *fields*))
 
 (defmacro defrule/ws (name-and-options
-		      expression &body options)
+                      expression &body options)
   "Like `esrap:defule' but define additional rules named NAME/WS and
 NAME/?WS which respectively require/ allow EXPRESSION to be followed
 by whitespace.
@@ -121,80 +117,78 @@ DEFINER is the name of the macro used to define \"main\"
 rule. Defaults to `esrap:defrule'.
 "
   (let+ (((name
-	   &key
-	   (definer         'defrule))
-	  (ensure-list name-and-options))
-	 (name/ws  (format-symbol *package* "~A/WS" name))
-	 (name/?ws (format-symbol *package* "~A/?WS" name)))
+           &key
+           (definer         'defrule))
+          (ensure-list name-and-options))
+         (name/ws  (format-symbol *package* "~A/WS" name))
+         (name/?ws (format-symbol *package* "~A/?WS" name)))
     `(progn
        (,definer ,name
-		 ,expression
-		 ,@options)
+                 ,expression
+                 ,@options)
        (defrule ,name/ws
-	   (and ,name whitespace)
-	 (:function first))
+           (and ,name whitespace)
+         (:function first))
        (defrule ,name/?ws
-	   (and ,name (? whitespace))
-	 (:function first)))))
+           (and ,name (? whitespace))
+         (:function first)))))
 
 (defmacro defrule/locations (symbol expression &body options)
   "Like `esrap:defrule' but add code which captures the source
 location and transfers it to conditions signaled from the rule."
   (labels
       ((ensure-bounds-args (option &optional transform)
-	 (let+ (((keyword args &body body) option)
-		((&values body declarations) (parse-body body))
-		((&optional &bounds-supplied? (start-var (gensym)) (end-var (gensym)))
-		 (if-let ((position (position 'esrap:&bounds args)))
-		   (cons t (subseq args (1+ position)))
-		   (list nil))))
-	   (values
-	    `(,keyword (,@args ,@(unless &bounds-supplied?
+         (let+ (((keyword args &body body) option)
+                ((&values body declarations) (parse-body body))
+                ((&optional &bounds-supplied? (start-var (gensym)) (end-var (gensym)))
+                 (if-let ((position (position 'esrap:&bounds args)))
+                   (cons t (subseq args (1+ position)))
+                   (list nil))))
+           (values
+            `(,keyword (,@args ,@(unless &bounds-supplied?
                                    `(esrap:&bounds ,start-var ,end-var)))
-		       ,@declarations
-		       ,@(if transform
+                       ,@declarations
+                       ,@(if transform
                              (funcall transform body start-var end-var)
                              body))
-	    start-var end-var)))
+            start-var end-var)))
        (replace-builder-functions (body start-var end-var)
-	 `((flet ,(mapcar
-		   (lambda (name)
-		     `(,name (&rest args)
-		        (apply #',name (append
-					args
-					(list :bounds (cons ,start-var ,end-var))))))
-		   '(make-comment make-syntax make-import make-option
-		     make-enum-value make-enum make-field make-message
-		     make-package1 make-file))
-	     ,@body)))
+         `((flet ,(mapcar
+                   (lambda (name)
+                     `(,name (&rest args)
+                        (apply #',name (append
+                                        args
+                                        (list :bounds (cons ,start-var ,end-var))))))
+                   '(make-comment make-syntax make-import make-option
+                     make-enum-value make-enum make-field make-message
+                     make-package1 make-file))
+             ,@body)))
        (process-around (option)
-	 (ensure-bounds-args option #'replace-builder-functions))
+         (ensure-bounds-args option #'replace-builder-functions))
        (process-lambda (option)
-	 (ensure-bounds-args option #'replace-builder-functions))
+         (ensure-bounds-args option #'replace-builder-functions))
        (process-options (options)
-	 (mapcar (lambda (option)
-		   (case (first option)
-		     (:around
-		      (process-around option))
-		     ((:lambda :destructure)
-		      (process-lambda option))
-		     (t
-		      option)))
-		 (adjoin `(:around () (esrap:call-transform)) options
-			 :key  #'first
-			 :test #'eq))))
+         (mapcar (lambda (option)
+                   (case (first option)
+                     (:around
+                      (process-around option))
+                     ((:lambda :destructure)
+                      (process-lambda option))
+                     (t
+                      option)))
+                 (adjoin `(:around () (esrap:call-transform)) options
+                         :key  #'first
+                         :test #'eq))))
     `(defrule ,symbol ,expression
        ,@(process-options options))))
 
-
 ;;; Single-character and whitespace rules
-;;
 
 (macrolet ((define-ws (character)
-	     (let ((name (format-symbol *package* "~C/WS" character)))
-	       `(defrule ,name
-		    (and ,character (? whitespace))
-		  (:constant nil)))))
+             (let ((name (format-symbol *package* "~C/WS" character)))
+               `(defrule ,name
+                    (and ,character (? whitespace))
+                  (:constant nil)))))
   (define-ws #\=)
   (define-ws #\,)
   (define-ws #\[)
@@ -210,9 +204,7 @@ location and transfers it to conditions signaled from the rule."
     #\;
   (:constant nil))
 
-
 ;;; Comment-related rules
-;;
 
 (defrule same-line
     (* (not #\Newline))
@@ -242,9 +234,7 @@ location and transfers it to conditions signaled from the rule."
 (defrule comment
     (or comment/rest-of-line comment/delimited))
 
-
 ;;; Literals and names
-;;
 
 (defrule/ws number
     (+ (digit-char-p character))
@@ -256,11 +246,11 @@ location and transfers it to conditions signaled from the rule."
   (:destructure (open characters close)
     (declare (ignore open close))
     (esrap:text (substitute #\" '("\\" "\"") characters
-			    :test #'equal))))
+                            :test #'equal))))
 
 (defrule/ws identifier
     (and (* (or (alpha-char-p character) #\_))
-	 (* (or (alphanumericp character) #\_)))
+         (* (or (alphanumericp character) #\_)))
   (:text t))
 
 (defrule dotted-identifier
@@ -269,22 +259,20 @@ location and transfers it to conditions signaled from the rule."
     (cons first (mapcar #'second rest))))
 
 (defrule/ws (identifier/checked
-	     :definer defrule/locations)
+             :definer defrule/locations)
     identifier
   (:lambda (name)
     (check-name name 1)))
 
-
 ;;; Types
-;;
 
 (macrolet
     ((frob ()
        `(defrule type/primitive
-	    (or ,@(mapcar (compose #'string-downcase #'string)
-			  +primitive-types+))
-	  (:lambda (name)
-	    (make-keyword (string-upcase name))))))
+            (or ,@(mapcar (compose #'string-downcase #'string)
+                          +primitive-types+))
+          (:lambda (name)
+            (make-keyword (string-upcase name))))))
   (frob))
 
 (defrule type/reference
@@ -295,13 +283,11 @@ location and transfers it to conditions signaled from the rule."
 (defrule/ws type1
     (or type/primitive type/reference))
 
-
 ;;; Option-stuff rules
-;;
 
 (defrule/locations syntax
     (and (and "syntax" (? whitespace))
-	 =/ws #\" (* (alphanumericp character)) #\")
+         =/ws #\" (* (alphanumericp character)) #\")
   (:destructure (keyword equals open value close)
     (declare (ignore keyword equals open close))
     (make-syntax *builder* (esrap:text value))))
@@ -323,9 +309,7 @@ location and transfers it to conditions signaled from the rule."
     (and (and "option" whitespace) option-body)
   (:function second))
 
-
 ;;; Messages
-;;
 
 (defrule/ws label
     (or "required" "optional" "repeated")
@@ -344,34 +328,32 @@ location and transfers it to conditions signaled from the rule."
     (declare (ignore equals semicolon))
     (check-field number name)
     (reduce (curry #'add-child *builder*) options
-	    :initial-value (make-field *builder* name number type label)))
+            :initial-value (make-field *builder* name number type label)))
   (:around ()
     (let ((*path*    *path*)
-	  (*options* nil))
+          (*options* nil))
       (esrap:call-transform))))
 
 (defrule message-element
     (or comment
-	(or message enum field option)
-	whitespace semicolon))
+        (or message enum field option)
+        whitespace semicolon))
 
 (defrule/locations message
     (and (and "message" whitespace) identifier/checked/?ws
-	 {/ws (* message-element) #\})
+         {/ws (* message-element) #\})
   (:destructure (keyword name open content close)
     (declare (ignore keyword open close))
     (reduce (curry #'add-child *builder*)
-	    (remove nil content)
-	    :initial-value (make-message *builder* name)))
+            (remove nil content)
+            :initial-value (make-message *builder* name)))
   (:around ()
     (let ((*fields* nil)
-	  (*path*   *path*)
-	  (*names*  (cons (list) *names*)))
+          (*path*   *path*)
+          (*names*  (cons (list) *names*)))
       (esrap:call-transform))))
 
-
 ;;; Enum
-;;
 
 (defrule/locations enum-value
     (and identifier/?ws =/ws number/?ws semicolon)
@@ -379,9 +361,9 @@ location and transfers it to conditions signaled from the rule."
     (declare (ignore equals semicolon))
     (check-name name)
     (unless (typep value 'enum-value)
-      (error "~@<Enum value ~D (named ~S) is not a integer in the range [~D, ~D].~@:>"
-	     value name
-	     +most-negative-enum-value+ +most-positive-enum-value+))
+      (error "~@<Enum value ~D (named ~S) is not an integer in the range [~D, ~D].~@:>"
+             value name
+             +most-negative-enum-value+ +most-positive-enum-value+))
     (make-enum-value *builder* name value))
   (:around ()
     (let ((*path* *path*))
@@ -389,88 +371,82 @@ location and transfers it to conditions signaled from the rule."
 
 (defrule enum-element
     (or comment
-	enum-value
-	whitespace semicolon))
+        enum-value
+        whitespace semicolon))
 
 (defrule/locations enum
     (and (and "enum" whitespace) identifier/checked/?ws
-	 {/ws (* enum-element) #\})
+         {/ws (* enum-element) #\})
   (:destructure (keyword name open content close)
     (declare (ignore keyword open close))
     (reduce (curry #'add-child *builder*)
-	    (remove nil content)
-	    :initial-value (make-enum *builder* name)))
+            (remove nil content)
+            :initial-value (make-enum *builder* name)))
   (:around ()
     (let ((*path*  *path*)
-	  (*names* (cons (list) *names*)))
+          (*names* (cons (list) *names*)))
       (esrap:call-transform))))
 
-
 ;;; Package
-;;
 
 (defrule/locations package
     (and (and "package" whitespace) dotted-identifier semicolon)
   (:destructure (keyword name semicolon)
     (declare (ignore keyword semicolon))
     (let ((qname (cons :absolute name)))
-     (setf *path*     (list qname)
-	   *package1* (make-package1 *builder* qname)))))
+      (setf *path*     (list qname)
+            *package1* (make-package1 *builder* qname)))))
 
-
 ;;; Root
-;;
 
 (defrule packaged-element
     (or comment
-	syntax option
-	message enum)
+        syntax option
+        message enum)
   (:lambda (element)
     (setf *package1* (add-child *builder* *package1* element))
     nil))
 
 (defrule/locations proto
     (* (or package
-	   import
-	   packaged-element
-	   whitespace semicolon))
+           import
+           packaged-element
+           whitespace semicolon))
   ;; Root production; parses top-level comments, package directives
   ;; and top-level definitions. Package directives change the value of
   ;; `*package1*' and affect subsequent top-level definitions.
   (:lambda (content)
     (reduce (curry #'add-child *builder*)
-	    (remove nil content)
-	    :initial-value (make-file *builder*)))
+            (remove nil content)
+            :initial-value (make-file *builder*)))
   (:around ()
     (let* ((default-package (make-package1 *builder* '(:absolute "default")))
-	   (*package1*      default-package)
-	   (*path*          (list (list :absolute)))
-	   (*names*         (list (list)))
-	   (*options*       (list)))
+           (*package1*      default-package)
+           (*path*          (list (list :absolute)))
+           (*names*         (list (list)))
+           (*options*       (list)))
       (add-child *builder* (esrap:call-transform) default-package))))
 
-
 ;;; Utility functions
-;;
 
 (defun %cleanup-comment (content)
   (let+ (((&flet starts-with-or-harmless (character)
-	    #'(lambda (line)
-		(or (emptyp line) (starts-with character line)))))
-	 ((&flet trim-first (line)
-	    (if (emptyp line)
-		line
-		(subseq line 1))))
-	 ((&labels trim (lines)
-	    "Strip common leading whitespace from LINES."
-	    (cond
-	      ((every #'emptyp lines) ; terminate recursion
-	       nil)
-	      ((or (every (starts-with-or-harmless #\Space) lines)
-		   (every (starts-with-or-harmless #\Tab)   lines)
-		   (every (starts-with-or-harmless #\*)     lines))
-	       (trim (mapcar #'trim-first lines)))
-	      (t
-	       (mapcar (curry #'string-right-trim '(#\Space #\Tab)) lines)))))
-	 (lines (trim (split-sequence #\Newline content))))
+            #'(lambda (line)
+                (or (emptyp line) (starts-with character line)))))
+         ((&flet trim-first (line)
+            (if (emptyp line)
+                line
+                (subseq line 1))))
+         ((&labels trim (lines)
+            "Strip common leading whitespace from LINES."
+            (cond
+              ((every #'emptyp lines) ; terminate recursion
+               nil)
+              ((or (every (starts-with-or-harmless #\Space) lines)
+                   (every (starts-with-or-harmless #\Tab)   lines)
+                   (every (starts-with-or-harmless #\*)     lines))
+               (trim (mapcar #'trim-first lines)))
+              (t
+               (mapcar (curry #'string-right-trim '(#\Space #\Tab)) lines)))))
+         (lines (trim (split-sequence #\Newline content))))
     (string-trim '(#\Newline) (format nil "~{~A~^~%~}" lines))))

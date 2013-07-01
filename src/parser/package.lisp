@@ -21,6 +21,7 @@
   (:use
    :cl
    :alexandria
+   :split-sequence
    :let-plus)
 
   (:import-from :esrap

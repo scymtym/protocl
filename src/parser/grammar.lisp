@@ -223,19 +223,27 @@ location and transfers it to conditions signaled from the rule."
 
 (defrule/locations comment/rest-of-line
     (and (and #\/ #\/) same-line (? #\Newline))
-  (:destructure (begin content end)
-    (declare (ignore begin end))
-    (make-comment *builder* content)))
+  (:destructure (open content close)
+    (declare (ignore open close))
+    (make-comment *builder* (string-trim '(#\/ #\Tab #\Space) content))))
 
 (defrule comment-content/delimited
-    (* (or (not #\*) (and #\* (! #\/))))
-  (:text t))
+    (* (or (not #\*) (and #\* (! #\/)))))
+
+(defrule comment-content/delimited/cleaned
+    (and (? #\*) comment-content/delimited)
+  (:destructure (star content)
+    (declare (ignore star))
+    (%cleanup-comment (esrap:text content))))
 
 (defrule/locations comment/delimited
-    (and (and #\/ #\*) comment-content/delimited (and #\* #\/))
+    (and (and #\/ #\*) comment-content/delimited/cleaned (and #\* #\/))
   (:destructure (open content close)
     (declare (ignore open close))
     (make-comment *builder* content)))
+
+(defrule comment
+    (or comment/rest-of-line comment/delimited))
 
 
 ;;; Literals and names
@@ -346,7 +354,7 @@ location and transfers it to conditions signaled from the rule."
       (esrap:call-transform))))
 
 (defrule message-element
-    (or comment/rest-of-line comment/delimited
+    (or comment
 	(or message enum field option)
 	whitespace semicolon))
 
@@ -357,8 +365,7 @@ location and transfers it to conditions signaled from the rule."
     (declare (ignore keyword open close))
     #+no (check-name name 1)
     (reduce (curry #'add-child *builder*)
-	    ;; remove ";" and ignored comments
-	    (remove-if (disjoin #'stringp #'null) content)
+	    (remove nil content)
 	    :initial-value (make-message *builder* name)))
   (:around ()
     (let ((*fields* nil)
@@ -381,7 +388,7 @@ location and transfers it to conditions signaled from the rule."
       (esrap:call-transform))))
 
 (defrule enum-element
-    (or comment/rest-of-line comment/delimited
+    (or comment
 	enum-value
 	whitespace semicolon))
 
@@ -392,8 +399,7 @@ location and transfers it to conditions signaled from the rule."
     (declare (ignore keyword open close))
     #+no (check-name name 1)
     (reduce (curry #'add-child *builder*)
-	    ;; remove ";" and ignored comments
-	    (remove-if (disjoin #'stringp #'null) content)
+	    (remove nil content)
 	    :initial-value (make-enum *builder* name)))
   (:around ()
     (let ((*path*  *path*)
@@ -417,14 +423,16 @@ location and transfers it to conditions signaled from the rule."
 ;;
 
 (defrule packaged-element
-    (or syntax import option message enum)
+    (or comment
+	syntax option
+	message enum)
   (:lambda (element)
     (setf *package1* (add-child *builder* *package1* element))
     nil))
 
 (defrule/locations proto
-    (* (or comment/rest-of-line comment/delimited
-	   package
+    (* (or package
+	   import
 	   packaged-element
 	   whitespace semicolon))
   ;; Root production; parses top-level comments, package directives
@@ -432,8 +440,7 @@ location and transfers it to conditions signaled from the rule."
   ;; `*package1*' and affect subsequent top-level definitions.
   (:lambda (content)
     (reduce (curry #'add-child *builder*)
-	    ;; remove everything but packages
-	    (remove-if (disjoin #'stringp #'null) content)
+	    (remove nil content)
 	    :initial-value (make-file *builder*)))
   (:around ()
     (let* ((default-package (make-package1 *builder* '(:absolute "default")))
@@ -442,3 +449,29 @@ location and transfers it to conditions signaled from the rule."
 	   (*names*         (list (list)))
 	   (*options*       (list)))
       (add-child *builder* (esrap:call-transform) default-package))))
+
+
+;;; Utility functions
+;;
+
+(defun %cleanup-comment (content)
+  (let+ (((&flet starts-with-or-harmless (character)
+	    #'(lambda (line)
+		(or (emptyp line) (starts-with character line)))))
+	 ((&flet trim-first (line)
+	    (if (emptyp line)
+		line
+		(subseq line 1))))
+	 ((&labels trim (lines)
+	    "Strip common leading whitespace from LINES."
+	    (cond
+	      ((every #'emptyp lines) ; terminate recursion
+	       nil)
+	      ((or (every (starts-with-or-harmless #\Space) lines)
+		   (every (starts-with-or-harmless #\Tab)   lines)
+		   (every (starts-with-or-harmless #\*)     lines))
+	       (trim (mapcar #'trim-first lines)))
+	      (t
+	       (mapcar (curry #'string-right-trim '(#\Space #\Tab)) lines)))))
+	 (lines (trim (split-sequence #\Newline content))))
+    (string-trim '(#\Newline) (format nil "~{~A~^~%~}" lines))))

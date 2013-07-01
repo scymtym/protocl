@@ -60,6 +60,7 @@
   :license     "LLGPLv3; see COPYING file for details."
   :description "Parser infrastructure for textual protocol buffer format."
   :depends-on  (:alexandria
+		:split-sequence
 		:let-plus
 
 		(:version :esrap "0.9"))

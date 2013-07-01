@@ -407,7 +407,11 @@ location and transfers it to conditions signaled from the rule."
         syntax option
         message enum)
   (:lambda (element)
-    (setf *package1* (add-child *builder* *package1* element))
+    ;; The builder that is the value of `*builder*' may choose to not
+    ;; create nodes for certain constructs (e.g. `syntax' or
+    ;; `option'). Ignore ELEMENT (which is nil in these cases) then.
+    (when element
+      (setf *package1* (add-child *builder* *package1* element)))
     nil))
 
 (defrule/locations proto
@@ -423,7 +427,7 @@ location and transfers it to conditions signaled from the rule."
             (remove nil content)
             :initial-value (make-file *builder*)))
   (:around ()
-    (let* ((default-package (make-package1 *builder* '(:absolute "default")))
+    (let* ((default-package (make-package1 *builder* '(:absolute)))
            (*package1*      default-package)
            (*path*          (list (list :absolute)))
            (*names*         (list (list)))

@@ -370,10 +370,9 @@ location and transfers it to conditions signaled from the rule."
 
 (defrule/locations message
     (and (and "message" whitespace) identifier/checked/?ws
-	 {/ws (* message-element) }/ws)
+	 {/ws (* message-element) #\})
   (:destructure (keyword name open content close)
     (declare (ignore keyword open close))
-    #+no (check-name name 1)
     (reduce (curry #'add-child *builder*)
 	    (remove nil content)
 	    :initial-value (make-message *builder* name)))
@@ -408,10 +407,9 @@ location and transfers it to conditions signaled from the rule."
 
 (defrule/locations enum
     (and (and "enum" whitespace) identifier/checked/?ws
-	 {/ws (* enum-element) }/ws)
+	 {/ws (* enum-element) #\})
   (:destructure (keyword name open content close)
     (declare (ignore keyword open close))
-    #+no (check-name name 1)
     (reduce (curry #'add-child *builder*)
 	    (remove nil content)
 	    :initial-value (make-enum *builder* name)))

@@ -434,8 +434,8 @@ location and transfers it to conditions signaled from the rule."
 
 (defun %cleanup-comment (content)
   (let+ (((&flet starts-with-or-harmless (character)
-            #'(lambda (line)
-                (or (emptyp line) (starts-with character line)))))
+            (lambda (line)
+              (or (emptyp line) (starts-with character line)))))
          ((&flet trim-first (line)
             (if (emptyp line)
                 line

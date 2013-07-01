@@ -37,10 +37,12 @@ function should signal an error of a subtype of `import-error' such as
                                   :fill-pointer    1))))
     ;; Load all dependencies specified via "import" statements in
     ;; SOURCE.
+    #+no
     (map nil (compose dependency-handler #'parse-namestring)
          (pb::file-desc-dependency file))
     ;; After dependencies have been resolved, try to register names
     ;; and relations.
+    #+no
     (pbb:emit set :relations)
     ;; Return the parsed and augmented descriptors.
     set))
@@ -73,6 +75,7 @@ collects the resulting `file-desc' instance in one `file-set-desc'."
   (let+ (((result &rest rest)
           (map 'list (apply #'rcurry #'load/text args) source))
          ((&flet merge-one (desc)
+            #+no
             (vector-push-extend
              (aref (pb::file-set-desc-file desc) 0)
              (pb::file-set-desc-file result)))))

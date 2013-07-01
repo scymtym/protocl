@@ -1,6 +1,6 @@
 ;;; types.lisp --- Types used in the protocl system.
 ;;
-;; Copyright (C) 2012 Jan Moringen
+;; Copyright (C) 2012, 2013 Jan Moringen
 ;;
 ;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 ;;
@@ -23,8 +23,11 @@
 ;;; Wire-types
 ;;
 
+(defconstant +most-positive-field-number+
+  #x1fffffff)
+
 (deftype field-number ()
-  'non-negative-fixnum)
+  `(integer 0 ,+most-positive-field-number+))
 
 (deftype wire-type/code ()
   '(member 0 1 2 5))
@@ -69,6 +72,13 @@
 ;;; Symbol-designated proto types
 ;;
 
+(defconstant +most-negative-enum-value+ #x-80000000)
+
+(defconstant +most-positive-enum-value+ #x7fffffff)
+
+(deftype enum-value ()
+  `(integer ,+most-negative-enum-value+ ,+most-positive-enum-value+))
+
 (define-constant +primitive-proto-types+
     '(:bool
 
@@ -101,33 +111,34 @@
            :int64 :sint64 :uint64
            :enum))
 
-(defun varint-enum-p (type)
-  (or (varint-p type)
-      (enum-type-p type)))
-;;; TODO(jmoringe): decide how enums should be represented
+(deftype svarint-type ()
+  '(member :sint32 :sint64))
 
-(deftype svarint ()
-  '(member type :sint32 :sint64))
-
-(deftype uvarint ()
-  '(and varint (not svarint)))
+(deftype uvarint-type ()
+  '(and varint-type (not svarint-type)))
 
 (deftype integer-type ()
-  '(or varint-enum fixed))
+  '(or varint-enum fixed-type))
 
-(deftype length-delim ()
-  '(and (not fixed64) (not fixed32) (not varint)))
+(deftype length-delim-type ()
+  '(and (not fixed64-type) (not fixed32-type) (not varint-type)))
 
 (deftype message-type ()
-  '(cons :message (cons symbol null)))
+  '(cons (eql :message) (cons symbol null)))
 
 (deftype enum-type ()
-  '(cons :enum (cons symbol null)))
+  '(cons (eql :enum) (cons symbol null)))
 
 (deftype proto-type ()
-  `(or messate-type
+  `(or message-type
        enum-type
        (member ,@+primitive-proto-types+)))
+
+;; TODO remove
+(defun varint-enum-p (type)
+  (typep type '(or varint-type enum-type)))
+;;; TODO(jmoringe): decide how enums should be represented
+
 
 
 ;;; Type queries
@@ -135,8 +146,8 @@
 
 (defun fixed-size (type)
   (etypecase type
-    (fixed32 4)
-    (fixed64 8)))
+    (fixed32-type 4)
+    (fixed64-type 8)))
 
 
 ;;; Type conversions
@@ -146,12 +157,12 @@
   (check-type type proto-type "a protocol buffer type designator")
 
   (cond
-    ((and repeated? packed?) 2)
-    ((varint-enum-p type)    0)
-    ((fixed64-p type)        1)
-    ((fixed32-p type)        5)
-    ((length-delim-p type)   2)
-    (t                       2)))
+    ((and repeated? packed?)         :size-delimited)
+    ((varint-enum-p type)            :varint)
+    ((typep type 'fixed64-type)      :fixed64)
+    ((typep type 'fixed32-type)      :fixed32)
+    ((typep type 'length-delim-type) :size-delimited)
+    (t                               :size-delimited)))
 
 (defun scalar-proto-type->lisp-type (type)
   (check-type type proto-type "a protocol buffer type designator")
@@ -171,7 +182,7 @@
 
 (defun proto-type->lisp-type (type &optional repeated? optional?)
   (flet ((maybe-repeated (base-type)
-	   (if repeated? `(array ,base-type *) base-type))
+	   (if repeated? `(array ,base-type (*)) base-type))
 	 (maybe-optional (base-type)
 	   (if optional? `(or null ,base-type) base-type)))
     (maybe-optional

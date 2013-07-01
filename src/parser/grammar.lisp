@@ -21,8 +21,18 @@
 
 ;;; TODO(jmoringe, 2012-04-16): duplicated in src/types.lisp
 
+(defconstant +most-positive-field-number+
+  #x1fffffff)
+
 (deftype field-number ()
-  'positive-integer)
+  `(integer 0 ,+most-positive-field-number+))
+
+(defconstant +most-negative-enum-value+ #x-80000000)
+
+(defconstant +most-positive-enum-value+ #x7fffffff)
+
+(deftype enum-value ()
+  `(integer ,+most-negative-enum-value+ ,+most-positive-enum-value+))
 
 (define-constant +primitive-types+
     '(:bool
@@ -95,8 +105,8 @@ conflicting field declarations.")
   ;; Check name and number.
   (check-name name)
   (unless (typep number 'field-number)
-    (error "~@<Number ~A of field ~S is not a positive integer.~@:>"
-	   number name))
+    (error "~@<Number ~A of field ~S is not a positive integer in the range [~D, ~D].~@:>"
+	   number name 0 +most-positive-field-number+))
 
   (when-let ((entry (find number *fields* :test #'= :key #'car)))
     (error "~@<Duplicate field number ~D for field ~S; previously used for field ~S.~@:>"
@@ -382,6 +392,10 @@ location and transfers it to conditions signaled from the rule."
   (:destructure (name equals value semicolon)
     (declare (ignore equals semicolon))
     (check-name name)
+    (unless (typep value 'enum-value)
+      (error "~@<Enum value ~D (named ~S) is not a integer in the range [~D, ~D].~@:>"
+	     value name
+	     +most-negative-enum-value+ +most-positive-enum-value+))
     (make-enum-value *builder* name value))
   (:around ()
     (let ((*path* *path*))

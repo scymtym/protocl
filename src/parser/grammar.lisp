@@ -297,7 +297,7 @@ location and transfers it to conditions signaled from the rule."
     (or boolean float integer string))
 
 (defrule/ws identifier
-    (and (* (or (alpha-char-p character) #\_))
+    (and (+ (or (alpha-char-p character) #\_))
          (* (or (alphanumericp character) #\_)))
   (:text t))
 

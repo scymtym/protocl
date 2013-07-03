@@ -295,7 +295,7 @@ location and transfers it to conditions signaled from the rule."
     (make-syntax *builder* (esrap:text value))))
 
 (defrule/locations import
-    (and (and "import" whitespace) string semicolon)
+    (and (and "import" (? whitespace)) string semicolon)
   (:destructure (keyword value semicolon)
     (declare (ignore keyword semicolon))
     (make-import *builder* value)))
@@ -318,14 +318,14 @@ location and transfers it to conditions signaled from the rule."
   (:lambda (label)
     (make-keyword (string-upcase label))))
 
-(defrule field-options
-    (and [/ws option-body (* (and \,/ws option-body)) ]/ws)
+(defrule/ws field-options
+    (and [/ws option-body/?ws (* (and \,/ws option-body/?ws)) #\])
   (:destructure (open first rest close)
     (declare (ignore open close))
     (cons first (mapcar #'second rest))))
 
 (defrule/locations field
-    (and label/ws type1/ws identifier/?ws =/ws number/?ws (? field-options) semicolon)
+    (and label/ws type1/ws identifier/?ws =/ws number/?ws (? field-options/?ws) semicolon)
   (:destructure (label type name equals number options semicolon)
     (declare (ignore equals semicolon))
     (check-field number name)

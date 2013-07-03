@@ -238,10 +238,53 @@ location and transfers it to conditions signaled from the rule."
 
 ;;; Literals and names
 
-(defrule/ws number
-    (+ (digit-char-p character))
+(defrule boolean
+    (or "true" "false")
+  (:lambda (value)
+    (string= value "true")))
+
+(defun decimal-digit-char? (character)
+  (digit-char-p character 10))
+
+(defun hex-digit-char? (character)
+  (digit-char-p character 16))
+
+(defrule integer/decimal
+    (and (? #\-) (+ (decimal-digit-char? character)))
   (:lambda (digits)
-    (parse-integer (esrap:text digits))))
+    (values (parse-integer (esrap:text digits) :radix 10))))
+
+(defrule integer/hex
+    (and "0x" (+ (hex-digit-char? character)))
+  (:destructure (prefix digits)
+    (declare (ignore prefix))
+    (values (parse-integer (esrap:text digits) :radix 16))))
+
+(defrule/ws integer
+    (or integer/hex integer/decimal))
+
+(defrule float/decimals
+    (and #\. (+ (decimal-digit-char? character)))
+  (:destructure (dot digits)
+    (declare (ignore dot))
+    (let* ((text   (esrap:text digits))
+           (length (length text)))
+      (/ (parse-integer text) (expt 10 length)))))
+
+(defrule float
+    (or (and (? #\-)         float/decimals)
+        (and integer/decimal float/decimals))
+  (:destructure (integer decimals)
+    (let+ (((&values sign integer)
+            (cond
+              ((null integer)
+               (values 1 0))
+              ((integerp integer)
+               (values (signum integer) (abs integer)))
+              ((string= integer "-")
+               (values -1 0))))
+           (rational (* sign (+ integer (or decimals 0)))))
+      (float rational 1.0d0))))
 
 (defrule/ws string
     (and #\" (* (or (and #\\ #\") (not #\"))) #\")
@@ -249,6 +292,9 @@ location and transfers it to conditions signaled from the rule."
     (declare (ignore open close))
     (esrap:text (substitute #\" '("\\" "\"") characters
                             :test #'equal))))
+
+(defrule/ws literal
+    (or boolean float integer string))
 
 (defrule/ws identifier
     (and (* (or (alpha-char-p character) #\_))
@@ -288,11 +334,10 @@ location and transfers it to conditions signaled from the rule."
 ;;; Option-stuff rules
 
 (defrule/locations syntax
-    (and (and "syntax" (? whitespace))
-         =/ws #\" (* (alphanumericp character)) #\")
-  (:destructure (keyword equals open value close)
-    (declare (ignore keyword equals open close))
-    (make-syntax *builder* (esrap:text value))))
+    (and (and "syntax" (? whitespace)) =/ws string/?ws semicolon)
+  (:destructure (keyword equals value semicolon)
+    (declare (ignore keyword equals semicolon))
+    (make-syntax *builder* value)))
 
 (defrule/locations import
     (and (and "import" (? whitespace)) string semicolon)
@@ -300,8 +345,8 @@ location and transfers it to conditions signaled from the rule."
     (declare (ignore keyword semicolon))
     (make-import *builder* value)))
 
-(defrule/locations option-body
-    (and identifier/?ws =/ws (or string number identifier))
+(defrule/ws (option-body :definer defrule/locations)
+    (and identifier/?ws =/ws (or literal identifier))
   (:destructure (name equals value)
     (declare (ignore equals))
     (check-option name)
@@ -325,7 +370,7 @@ location and transfers it to conditions signaled from the rule."
     (cons first (mapcar #'second rest))))
 
 (defrule/locations field
-    (and label/ws type1/ws identifier/?ws =/ws number/?ws (? field-options/?ws) semicolon)
+    (and label/ws type1/ws identifier/?ws =/ws integer/?ws (? field-options/?ws) semicolon)
   (:destructure (label type name equals number options semicolon)
     (declare (ignore equals semicolon))
     (check-field number name)
@@ -357,7 +402,7 @@ location and transfers it to conditions signaled from the rule."
 ;;; Enum
 
 (defrule/locations enum-value
-    (and identifier/?ws =/ws number/?ws semicolon)
+    (and identifier/?ws =/ws integer/?ws semicolon)
   (:destructure (name equals value semicolon)
     (declare (ignore equals semicolon))
     (check-name name)

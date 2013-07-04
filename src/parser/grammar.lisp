@@ -471,7 +471,7 @@ location and transfers it to conditions signaled from the rule."
             (remove nil content)
             :initial-value (make-file *builder*)))
   (:around ()
-    (let* ((default-package (make-package1 *builder* '(:absolute)))
+    (let* ((default-package (make-package1 *builder* '(:absolute) :bounds '(0 . 0)))
            (*package1*      default-package)
            (*path*          (list (list :absolute)))
            (*names*         (list (list)))

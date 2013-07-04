@@ -441,8 +441,8 @@ location and transfers it to conditions signaled from the rule."
   (:destructure (keyword name semicolon)
     (declare (ignore keyword semicolon))
     (let ((qname (cons :absolute name)))
-      (setf *path*     (list qname)
-            *package1* (make-package1 *builder* qname)))))
+      (list (setf *path*     (list qname)
+                  *package1* (make-package1 *builder* qname))))))
 
 ;;; Root
 
@@ -455,7 +455,7 @@ location and transfers it to conditions signaled from the rule."
     ;; create nodes for certain constructs (e.g. `syntax' or
     ;; `option'). Ignore ELEMENT (which is nil in these cases) then.
     (when element
-      (setf *package1* (add-child *builder* *package1* element)))
+      (list (setf *package1* (add-child *builder* *package1* element))))
     nil))
 
 (defrule/locations proto
@@ -468,7 +468,7 @@ location and transfers it to conditions signaled from the rule."
   ;; `*package1*' and affect subsequent top-level definitions.
   (:lambda (content)
     (reduce (curry #'add-child *builder*)
-            (remove nil content)
+            (reduce #'append content)
             :initial-value (make-file *builder*)))
   (:around ()
     (let* ((default-package (make-package1 *builder* '(:absolute) :bounds '(0 . 0)))

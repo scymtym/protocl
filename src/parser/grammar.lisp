@@ -353,7 +353,7 @@ location and transfers it to conditions signaled from the rule."
     (make-option *builder* name value)))
 
 (defrule option
-    (and (and "option" whitespace) option-body)
+    (and (and "option" whitespace) option-body/?ws semicolon)
   (:function second))
 
 ;;; Messages

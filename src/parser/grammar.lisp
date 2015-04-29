@@ -301,13 +301,12 @@ location and transfers it to conditions signaled from the rule."
          (* (or (alphanumericp character) #\_)))
   (:text t))
 
-(defrule dotted-identifier
+(defrule/ws dotted-identifier
     (and identifier (* (and #\. identifier)))
   (:destructure (first rest)
     (cons first (mapcar #'second rest))))
 
-(defrule/ws (identifier/checked
-             :definer defrule/locations)
+(defrule/ws (identifier/checked :definer defrule/locations)
     identifier
   (:lambda (name)
     (check-name name 1)))
@@ -340,7 +339,7 @@ location and transfers it to conditions signaled from the rule."
     (make-syntax *builder* value)))
 
 (defrule/locations import
-    (and (and "import" (? whitespace)) string semicolon)
+    (and (and "import" (? whitespace)) string/?ws semicolon)
   (:destructure (keyword value semicolon)
     (declare (ignore keyword semicolon))
     (make-import *builder* value)))
@@ -437,7 +436,7 @@ location and transfers it to conditions signaled from the rule."
 ;;; Package
 
 (defrule/locations package
-    (and (and "package" whitespace) dotted-identifier semicolon)
+    (and (and "package" whitespace) dotted-identifier/?ws semicolon)
   (:destructure (keyword name semicolon)
     (declare (ignore keyword semicolon))
     (let ((qname (cons :absolute name)))

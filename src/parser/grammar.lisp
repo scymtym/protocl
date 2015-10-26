@@ -264,12 +264,13 @@ location and transfers it to conditions signaled from the rule."
     (or integer/hex integer/decimal))
 
 (defrule float/decimals
-    (and #\. (+ (decimal-digit-char? character)))
-  (:destructure (dot digits)
-    (declare (ignore dot))
-    (let* ((text   (esrap:text digits))
-           (length (length text)))
-      (/ (parse-integer text) (expt 10 length)))))
+    (and #\. (* (decimal-digit-char? character)))
+  (:function second)
+  (:lambda (digits)
+    (when digits
+      (let* ((text   (esrap:text digits))
+             (length (length text)))
+        (/ (parse-integer text) (expt 10 length))))))
 
 (defrule float
     (or (and (? #\-)         float/decimals)

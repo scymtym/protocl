@@ -1,6 +1,6 @@
 ;;;; grammar.lisp --- Protocol buffer descriptor grammar.
 ;;;;
-;;;; Copyright (C) 2012, 2013 Jan Moringen
+;;;; Copyright (C) 2012-2017 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -441,8 +441,8 @@ location and transfers it to conditions signaled from the rule."
   (:destructure (keyword name semicolon)
     (declare (ignore keyword semicolon))
     (let ((qname (cons :absolute name)))
-      (list (setf *path*     (list qname)
-                  *package1* (make-package1 *builder* qname))))))
+      (setf *path*     (list qname)
+            *package1* (make-package1 *builder* qname)))))
 
 ;;; Root
 
@@ -455,7 +455,7 @@ location and transfers it to conditions signaled from the rule."
     ;; create nodes for certain constructs (e.g. `syntax' or
     ;; `option'). Ignore ELEMENT (which is nil in these cases) then.
     (when element
-      (list (setf *package1* (add-child *builder* *package1* element))))
+      (setf *package1* (add-child *builder* *package1* element)))
     nil))
 
 (defrule/locations proto
@@ -468,7 +468,7 @@ location and transfers it to conditions signaled from the rule."
   ;; `*package1*' and affect subsequent top-level definitions.
   (:lambda (content)
     (reduce (curry #'add-child *builder*)
-            (reduce #'append content)
+            (remove nil content)
             :initial-value (make-file *builder*)))
   (:around ()
     (let* ((default-package (make-package1 *builder* '(:absolute) :bounds '(0 . 0)))
@@ -476,7 +476,9 @@ location and transfers it to conditions signaled from the rule."
            (*path*          (list (list :absolute)))
            (*names*         (list (list)))
            (*options*       (list)))
-      (add-child *builder* (esrap:call-transform) default-package))))
+      (list
+       (add-child *builder* (esrap:call-transform) default-package)
+       default-package))))
 
 ;;; Utility functions
 

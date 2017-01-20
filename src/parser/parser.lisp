@@ -1,6 +1,6 @@
 ;;;; parser.lisp --- Implementation of the parser protocol.
 ;;;;
-;;;; Copyright (C) 2012, 2013 Jan Moringen
+;;;; Copyright (C) 2012-2017 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -8,4 +8,4 @@
 
 (defmethod parse ((source string) (builder t))
   (let ((*builder* builder))
-    (values (esrap:parse 'proto source))))
+    (values-list (esrap:parse 'proto source))))

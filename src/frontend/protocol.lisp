@@ -1,6 +1,6 @@
 ;;;; protocol.lisp --- Protocol functions of the frontend module.
 ;;;;
-;;;; Copyright (C) 2012, 2013 Jan Moringen
+;;;; Copyright (C) 2012-2017 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -107,7 +107,7 @@ be selected. The value :ERROR causes an error of type
          (locations  (if (eq (first (pathname-directory path)) :absolute)
                          (list path)
                          (map 'list (curry #'merge-pathnames path)
-                              *proto-load-path*)))
+                              *import-search-path*)))
          ;; Restrict locations to existing files and process candidate
          ;; set.
          (candidates (remove-if-not #'probe-file locations)))

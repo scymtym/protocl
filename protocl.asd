@@ -36,7 +36,7 @@
 
 ;;; System definitions
 
-(defsystem :protocl-parser
+(defsystem :protocl/parser
   :author      "Jan Moringen <jmoringe@techfak.uni-bielefeld.de>"
   :maintainer  "Jan Moringen <jmoringe@techfak.uni-bielefeld.de>"
   :version     #.(version/string)
@@ -67,7 +67,7 @@
 
                 :nibbles
 
-                :protocl-parser)
+                :protocl/parser)
   :components  ((:module     "src"
                  :serial     t
                  :components ((:file       "package")
